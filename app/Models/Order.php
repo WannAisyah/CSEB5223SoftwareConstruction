@@ -16,6 +16,7 @@ class Order extends Model
         'total_amount',
         'status',
     ];
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
@@ -29,5 +30,13 @@ class Order extends Model
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'order_date' => 'datetime',
+            'total_amount' => 'decimal:2',
+        ];
     }
 }

@@ -12,12 +12,21 @@ class Cart extends Model
         'customer_id',
         'total',
     ];
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
-    public function cartItem(): HasMany
+
+    public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'total' => 'decimal:2',
+        ];
     }
 }
