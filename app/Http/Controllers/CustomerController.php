@@ -6,6 +6,7 @@ use App\Models\Customer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -18,15 +19,16 @@ class CustomerController extends Controller
     {
         $request->validate(['search' => 'nullable|string|max:255']);
         $search = $request->string('search')->trim()->toString();
-        $customers = Customer::with(['cart', 'orders'])
-            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
-            ->get();
+        $query = Customer::with(['cart', 'orders'])
+            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"));
 
         if (request()->expectsJson()) {
-            return response()->json($customers);
+            return response()->json($query->get()->makeHidden('password'));
         }
 
-        return view('Customers.index', compact('customers'));
+        $customers = $query->paginate(15)->withQueryString();
+
+        return view('customers.index', compact('customers'));
     }
 
     /**
@@ -46,17 +48,23 @@ class CustomerController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:customers,email',
             'password' => 'required|string|min:8',
+            'delivery_address' => 'nullable|string|max:255',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
 
-        $customer = Customer::create($validated);
+        $customer = DB::transaction(function () use ($validated): Customer {
+            $customer = Customer::query()->create($validated);
+            $customer->cart()->create(['total' => 0]);
+
+            return $customer;
+        });
 
         if (request()->expectsJson()) {
             return response()->json($customer->makeHidden('password'), 201);
         }
 
-        return redirect()->route('customers.show', $customer)->with('success', 'Customer created successfully.');
+        return redirect()->route('customers.show', $customer)->with('success', "Created customer {$customer->name} (#{$customer->id}).");
     }
 
     /**
@@ -70,7 +78,7 @@ class CustomerController extends Controller
             );
         }
 
-        return view('Customers.show', compact('customer'));
+        return view('customers.show', compact('customer'));
     }
 
     /**
@@ -95,10 +103,13 @@ class CustomerController extends Controller
                 Rule::unique('customers', 'email')->ignore($customer->id),
             ],
             'password' => 'nullable|string|min:8',
+            'delivery_address' => 'sometimes|nullable|string|max:255',
         ]);
 
-        if (isset($validated['password'])) {
+        if (($validated['password'] ?? null) !== null) {
             $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
         }
 
         $customer->update($validated);
@@ -107,7 +118,7 @@ class CustomerController extends Controller
             return response()->json($customer->makeHidden('password'));
         }
 
-        return redirect()->route('customers.show', $customer)->with('success', 'Customer updated successfully.');
+        return redirect()->route('customers.show', $customer)->with('success', "Updated customer {$customer->name} (#{$customer->id}).");
     }
 
     /**
@@ -117,7 +128,7 @@ class CustomerController extends Controller
     {
         if ($customer->orders()->exists()) {
             return back()->withErrors([
-                'customer' => 'This customer cannot be deleted because they have orders.',
+                'customer' => "{$customer->name} cannot be deleted because they have orders.",
             ]);
         }
 
@@ -125,10 +136,10 @@ class CustomerController extends Controller
 
         if (request()->expectsJson()) {
             return response()->json([
-                'message' => 'Customer deleted successfully.',
+                'message' => "Deleted customer {$customer->name} (#{$customer->id}).",
             ]);
         }
 
-        return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
+        return redirect()->route('customers.index')->with('success', "Deleted customer {$customer->name} (#{$customer->id}).");
     }
 }

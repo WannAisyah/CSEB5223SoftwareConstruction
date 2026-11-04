@@ -6,15 +6,20 @@ use App\Models\Cart;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 class SearchAndPaymentFeatureTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[Group('module-customers')]
     public function test_customer_search_matches_part_of_a_name(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->customer('Aminah Ahmad', 'aminah@example.test');
         $this->customer('Nora Hassan', 'nora@example.test');
 
@@ -28,8 +33,11 @@ class SearchAndPaymentFeatureTest extends TestCase
             ->assertSee('No customers match your search.');
     }
 
+    #[Group('module-carts')]
     public function test_cart_search_matches_the_exact_id_and_rejects_invalid_input(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $customer = $this->customer('Aminah', 'aminah@example.test');
         $otherCustomer = $this->customer('Nora', 'nora@example.test');
         Cart::query()->forceCreate(['id' => 1, 'customer_id' => $customer->id, 'total' => 0]);
@@ -45,8 +53,11 @@ class SearchAndPaymentFeatureTest extends TestCase
             ->assertJsonValidationErrors('search');
     }
 
+    #[Group('module-payments')]
     public function test_payments_display_readable_labels_and_preserve_method_values(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $customer = $this->customer('Aminah', 'aminah@example.test');
         $order = Order::query()->create([
             'customer_id' => $customer->id,

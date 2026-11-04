@@ -16,15 +16,16 @@ class CartController extends Controller
     public function index(Request $request): View|JsonResponse
     {
         $request->validate(['search' => 'nullable|integer|min:1']);
-        $carts = Cart::with(['customer', 'cartItems.product'])
-            ->when($request->filled('search'), fn ($query) => $query->whereKey($request->integer('search')))
-            ->get();
+        $query = Cart::with(['customer', 'cartItems.product'])
+            ->when($request->filled('search'), fn ($query) => $query->whereKey($request->integer('search')));
 
         if (request()->expectsJson()) {
-            return response()->json($carts);
+            return response()->json($query->get());
         }
 
-        return view('Carts.index', compact('carts'));
+        $carts = $query->paginate(15)->withQueryString();
+
+        return view('carts.index', compact('carts'));
     }
 
     /**
@@ -44,10 +45,9 @@ class CartController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id|unique:carts,customer_id',
-            'total' => 'nullable|numeric|min:0',
         ]);
 
-        $validated['total'] = $validated['total'] ?? 0;
+        $validated['total'] = 0;
 
         $cart = Cart::create($validated);
 
@@ -55,7 +55,7 @@ class CartController extends Controller
             return response()->json($cart, 201);
         }
 
-        return redirect()->route('carts.show', $cart)->with('success', 'Cart created successfully.');
+        return redirect()->route('carts.show', $cart)->with('success', "Created cart #{$cart->id} for {$cart->customer->name}.");
     }
 
     /**
@@ -69,7 +69,7 @@ class CartController extends Controller
             );
         }
 
-        return view('Carts.show', compact('cart'));
+        return view('carts.show', compact('cart'));
     }
 
     /**
@@ -91,7 +91,6 @@ class CartController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'sometimes|required|exists:customers,id|unique:carts,customer_id,'.$cart->id,
-            'total' => 'sometimes|required|numeric|min:0',
         ]);
 
         $cart->update($validated);
@@ -100,7 +99,7 @@ class CartController extends Controller
             return response()->json($cart);
         }
 
-        return redirect()->route('carts.show', $cart)->with('success', 'Cart updated successfully.');
+        return redirect()->route('carts.show', $cart)->with('success', "Updated cart #{$cart->id} for {$cart->customer->name}.");
     }
 
     /**
@@ -112,10 +111,10 @@ class CartController extends Controller
 
         if (request()->expectsJson()) {
             return response()->json([
-                'message' => 'Cart deleted successfully.',
+                'message' => "Deleted cart #{$cart->id} for {$cart->customer->name}.",
             ]);
         }
 
-        return redirect()->route('carts.index')->with('success', 'Cart deleted successfully.');
+        return redirect()->route('carts.index')->with('success', "Deleted cart #{$cart->id} for {$cart->customer->name}.");
     }
 }

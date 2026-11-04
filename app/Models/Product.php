@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Product extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'name',
         'description',
@@ -34,10 +37,12 @@ class Product extends Model
         }
 
         if (Str::startsWith($this->image, 'products/')) {
-            return Storage::disk('public')->url($this->image);
+            return Storage::disk('public')->exists($this->image)
+                ? Storage::disk('public')->url($this->image)
+                : null;
         }
 
-        return asset($this->image);
+        return is_file(public_path($this->image)) ? asset($this->image) : null;
     }
 
     protected function casts(): array

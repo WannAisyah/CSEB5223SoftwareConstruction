@@ -39,5 +39,6 @@
                 @endforelse
             </tbody>
         </table></div>
+        <div class="mt-6">{{ $carts->links() }}</div>
     
 @endsection

@@ -2,8 +2,7 @@
     @csrf
     @if ($method !== 'POST') @method($method) @endif
     <div class="form-grid">
-        <div><label for="order_id">Order</label><select id="order_id" name="order_id" required><option value="">Select an order</option>@foreach ($orders as $option)<option value="{{ $option->id }}" @selected((string) old('order_id', $payment->order_id ?? '') === (string) $option->id)>Order #{{ $option->id }} - {{ $option->customer->name }}</option>@endforeach</select>@error('order_id')<div class="error">{{ $message }}</div>@enderror</div>
-        <div><label for="amount">Amount</label><input id="amount" type="number" step="0.01" min="0" name="amount" value="{{ old('amount', $payment->amount ?? '') }}" required>@error('amount')<div class="error">{{ $message }}</div>@enderror</div>
+        <div><label for="order_id">Order</label><select id="order_id" name="order_id" required><option value="">Select an order</option>@foreach ($orders as $option)<option value="{{ $option->id }}" @selected((string) old('order_id', $payment->order_id ?? '') === (string) $option->id)>Order #{{ $option->id }} - {{ $option->customer->name }} (${{ number_format((float) $option->total_amount, 2) }})</option>@endforeach</select><p class="mt-2 text-xs text-zinc-500">The payment amount is the order total.</p>@error('order_id')<div class="error">{{ $message }}</div>@enderror</div>
         <div>
             <label for="payment_method">Method</label>
             @php

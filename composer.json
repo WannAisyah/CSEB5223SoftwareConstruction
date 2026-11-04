@@ -52,6 +52,16 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "test:auth": "@php artisan test --compact --group=module-auth",
+        "test:customers": "@php artisan test --compact --group=module-customers",
+        "test:products": "@php artisan test --compact --group=module-products",
+        "test:carts": "@php artisan test --compact --group=module-carts",
+        "test:cart-items": "@php artisan test --compact --group=module-cart-items",
+        "test:orders": "@php artisan test --compact --group=module-orders",
+        "test:order-items": "@php artisan test --compact --group=module-order-items",
+        "test:payments": "@php artisan test --compact --group=module-payments",
+        "test:modules": "@php tests/ModuleReport.php",
+        "test:module-report": "@php tests/ModuleReport.php",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
