@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -12,7 +13,9 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $products = Product::query()
+        $request->validate(['search' => ['nullable', 'string', 'max:255']]);
+
+        $query = Product::query()
             ->when($request->string('search')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $query->where(function ($query) use ($request) {
                     $search = $request->string('search')->trim()->toString();
@@ -21,19 +24,20 @@ class ProductController extends Controller
                         ->orWhere('description', 'like', "%{$search}%");
                 });
             })
-            ->latest()
-            ->get();
+            ->latest();
 
         if (request()->expectsJson()) {
-            return response()->json($products);
+            return response()->json($query->get());
         }
 
-        return view('Products.index', compact('products'));
+        $products = $query->paginate(15)->withQueryString();
+
+        return view('products.index', compact('products'));
     }
 
     public function create()
     {
-        return view('Products.create');
+        return view('products.create');
     }
 
     public function store(Request $request)
@@ -53,7 +57,7 @@ class ProductController extends Controller
             return response()->json($product, 201);
         }
 
-        return redirect()->route('products.show', $product)->with('success', 'Product created successfully.');
+        return redirect()->route('products.show', $product)->with('success', "Created product {$product->name} (#{$product->id}).");
     }
 
     public function show(Product $product)
@@ -62,12 +66,12 @@ class ProductController extends Controller
             return response()->json($product);
         }
 
-        return view('Products.show', compact('product'));
+        return view('products.show', compact('product'));
     }
 
     public function edit(Product $product)
     {
-        return view('Products.edit', compact('product'));
+        return view('products.edit', compact('product'));
     }
 
     public function update(Request $request, Product $product)
@@ -86,28 +90,20 @@ class ProductController extends Controller
             return response()->json($product);
         }
 
-        return redirect()->route('products.show', $product)->with('success', 'Product updated successfully.');
+        return redirect()->route('products.show', $product)->with('success', "Updated product {$product->name} (#{$product->id}).");
     }
 
     public function destroy(Product $product)
     {
-        if ($product->orderItems()->exists()) {
-            return back()->withErrors([
-                'product' => 'This product cannot be deleted because it belongs to an order.',
-            ]);
-        }
-
-        $image = $product->image;
         $product->delete();
-        $this->deleteUnusedImage($image);
 
         if (request()->expectsJson()) {
             return response()->json([
-                'message' => 'Product deleted successfully.',
+                'message' => "Removed product {$product->name} (#{$product->id}) from the catalog.",
             ]);
         }
 
-        return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
+        return redirect()->route('products.index')->with('success', "Removed product {$product->name} (#{$product->id}) from the catalog.");
     }
 
     /** @param array<string, mixed> $validated */
@@ -118,9 +114,28 @@ class ProductController extends Controller
         $path = null;
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
+            $image = $request->file('image');
 
-            if ($path === false) {
+            if (! $image->isValid() || $image->getPathname() === '' || ! is_file($image->getPathname())) {
+                throw ValidationException::withMessages([
+                    'image' => 'The image upload was not received correctly. Please try again.',
+                ]);
+            }
+
+            $path = 'products/'.Str::random(40).'.'.$image->extension();
+            $stream = fopen($image->getPathname(), 'rb');
+
+            if ($stream === false) {
+                throw ValidationException::withMessages(['image' => 'The image could not be read. Please try again.']);
+            }
+
+            try {
+                $stored = Storage::disk('public')->put($path, $stream);
+            } finally {
+                fclose($stream);
+            }
+
+            if (! $stored) {
                 throw ValidationException::withMessages(['image' => 'The image could not be saved. Please try again.']);
             }
 
@@ -145,7 +160,7 @@ class ProductController extends Controller
     private function deleteUnusedImage(?string $path): void
     {
         if ($path !== null && preg_match('/\Aproducts\/[a-zA-Z0-9]+\.(jpg|jpeg|png|webp)\z/', $path)
-            && ! Product::where('image', $path)->exists()) {
+            && ! Product::withTrashed()->where('image', $path)->exists()) {
             Storage::disk('public')->delete($path);
         }
     }

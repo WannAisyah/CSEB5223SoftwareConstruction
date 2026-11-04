@@ -29,12 +29,12 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $products = [
-            ['name' => 'Classic White T-Shirt', 'description' => 'Comfortable everyday cotton tee.', 'price' => 24.99, 'stock' => 50, 'image' => 'shirts/white-tee.jpg'],
-            ['name' => 'Premium Hoodie', 'description' => 'Warm fleece hoodie for everyday wear.', 'price' => 59.99, 'stock' => 35, 'image' => 'hoodies/premium-hoodie.jpg'],
-            ['name' => 'Running Sneakers', 'description' => 'Lightweight sneakers with cushioned support.', 'price' => 89.99, 'stock' => 22, 'image' => 'shoes/running-sneakers.jpg'],
-            ['name' => 'Leather Backpack', 'description' => 'Durable backpack with room for daily essentials.', 'price' => 74.99, 'stock' => 18, 'image' => 'bags/leather-backpack.jpg'],
-            ['name' => 'Wireless Headphones', 'description' => 'Noise-reducing Bluetooth headphones.', 'price' => 129.99, 'stock' => 12, 'image' => 'audio/wireless-headphones.jpg'],
-            ['name' => 'Water Bottle', 'description' => 'Insulated stainless steel bottle.', 'price' => 19.99, 'stock' => 60, 'image' => 'accessories/water-bottle.jpg'],
+            ['name' => 'Classic White T-Shirt', 'description' => 'Comfortable everyday cotton tee.', 'price' => 24.99, 'stock' => 50],
+            ['name' => 'Premium Hoodie', 'description' => 'Warm fleece hoodie for everyday wear.', 'price' => 59.99, 'stock' => 35],
+            ['name' => 'Running Sneakers', 'description' => 'Lightweight sneakers with cushioned support.', 'price' => 89.99, 'stock' => 22],
+            ['name' => 'Leather Backpack', 'description' => 'Durable backpack with room for daily essentials.', 'price' => 74.99, 'stock' => 18],
+            ['name' => 'Wireless Headphones', 'description' => 'Noise-reducing Bluetooth headphones.', 'price' => 129.99, 'stock' => 12],
+            ['name' => 'Water Bottle', 'description' => 'Insulated stainless steel bottle.', 'price' => 19.99, 'stock' => 60],
         ];
 
         $createdProducts = [];
@@ -44,11 +44,11 @@ class DatabaseSeeder extends Seeder
         }
 
         $customers = [
-            ['name' => 'Alice Johnson', 'email' => 'alice@example.com', 'password' => 'password123'],
-            ['name' => 'Brian Smith', 'email' => 'brian@example.com', 'password' => 'password123'],
-            ['name' => 'Carla Gomez', 'email' => 'carla@example.com', 'password' => 'password123'],
-            ['name' => 'Daniel Lee', 'email' => 'daniel@example.com', 'password' => 'password123'],
-            ['name' => 'Eva Martinez', 'email' => 'eva@example.com', 'password' => 'password123'],
+            ['name' => 'Alice Johnson', 'email' => 'alice@example.com', 'password' => 'password123', 'delivery_address' => '12 Jalan Merdeka, 50000 Kuala Lumpur'],
+            ['name' => 'Brian Smith', 'email' => 'brian@example.com', 'password' => 'password123', 'delivery_address' => '24 Jalan Bukit Bintang, 55100 Kuala Lumpur'],
+            ['name' => 'Carla Gomez', 'email' => 'carla@example.com', 'password' => 'password123', 'delivery_address' => '8 Jalan SS 2/55, 47300 Petaling Jaya'],
+            ['name' => 'Daniel Lee', 'email' => 'daniel@example.com', 'password' => 'password123', 'delivery_address' => '15 Jalan Tun Razak, 50400 Kuala Lumpur'],
+            ['name' => 'Eva Martinez', 'email' => 'eva@example.com', 'password' => 'password123', 'delivery_address' => '31 Jalan Ampang, 50450 Kuala Lumpur'],
         ];
 
         $customerModels = [];
@@ -58,6 +58,7 @@ class DatabaseSeeder extends Seeder
                 'name' => $customerData['name'],
                 'email' => $customerData['email'],
                 'password' => Hash::make($customerData['password']),
+                'delivery_address' => $customerData['delivery_address'],
             ]);
         }
 
@@ -96,6 +97,7 @@ class DatabaseSeeder extends Seeder
 
             $order = Order::create([
                 'customer_id' => $customer->id,
+                'delivery_address' => collect($customers)->firstWhere('email', $customer->email)['delivery_address'],
                 'order_date' => now()->subDays(rand(1, 45)),
                 'total_amount' => 0,
                 'status' => ['pending', 'processing', 'completed'][rand(0, 2)],

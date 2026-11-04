@@ -30,7 +30,7 @@
                         <div class="actions">
                             <a href="{{ route('customers.show', $customer) }}" class="btn secondary">View</a>
                             <form action="{{ route('customers.destroy', $customer) }}" method="POST"
-                                onsubmit="return confirm('Delete this customer?')">
+                                onsubmit="return confirm('Delete customer #{{ $customer->id }}?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn danger">Delete</button>
@@ -42,5 +42,6 @@
                 <p class="py-8 text-sm text-zinc-500">{{ request()->filled('search') ? 'No customers match your search.' : 'No customers yet.' }}</p>
             @endforelse
         </div>
+        <div class="mt-6">{{ $customers->links() }}</div>
     
 @endsection

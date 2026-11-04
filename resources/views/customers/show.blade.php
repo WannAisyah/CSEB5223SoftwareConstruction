@@ -21,7 +21,7 @@
 
         <div class="panel">
             <form action="{{ route('customers.destroy', $customer) }}" method="POST"
-                onsubmit="return confirm('Delete this customer?')">
+                onsubmit="return confirm('Delete customer #{{ $customer->id }}?')">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn danger">Delete customer</button>

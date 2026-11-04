@@ -16,7 +16,7 @@
 
         <div class="panel" >
             <form action="{{ route('payments.destroy', $payment) }}" method="POST"
-                onsubmit="return confirm('Delete this payment?')">
+                onsubmit="return confirm('Delete payment #{{ $payment->id }}?')">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn danger">Delete payment</button>

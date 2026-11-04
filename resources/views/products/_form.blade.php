@@ -10,11 +10,11 @@
             <input id="image" type="file" name="image" accept="image/jpeg,image/png,image/webp" aria-describedby="image-hint">
             <p id="image-hint" class="mt-2 text-xs text-zinc-500">JPG, PNG or WebP. Maximum 2 MB.</p>
             @error('image')<div class="error">{{ $message }}</div>@enderror
-            @if(isset($product) && $product->image)
+            @if(isset($product) && ($imageUrl = $product->imageUrl()))
                 <div class="mt-3 flex items-center gap-3">
-                    <div class="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 text-xs text-zinc-400">
+                    <div class="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 text-xs text-zinc-600">
                         <span>{{ Str::upper(Str::substr($product->name, 0, 2)) }}</span>
-                        <img src="{{ $product->imageUrl() }}" alt="Current image for {{ $product->name }}" data-product-image class="absolute inset-0 h-full w-full bg-white object-contain opacity-0">
+                        <img src="{{ $imageUrl }}" alt="Current image for {{ $product->name }}" data-product-image class="absolute inset-0 h-full w-full bg-white object-contain opacity-0">
                     </div>
                     <span class="text-xs text-zinc-500">Current image</span>
                 </div>
